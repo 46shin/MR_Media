@@ -1,0 +1,125 @@
+##3인칭카메라시점
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Cameramovement : MonoBehaviour
+{
+    public Transform objectTofollow;
+    public float followSpeed = 10f;
+    public float sensitivity = 100f;
+    public float clampAngle = 70f;
+
+    private float rotX;
+    private float rotY;
+
+    public Transform realCamera;
+    public Vector3 dirNormalized;
+    public Vector3 finalDir;
+    public float minDistance;
+    public float maxDistance;
+    public float finalDistance;
+    public float smoothness = 5f;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        rotX = transform.localRotation.eulerAngles.x;
+        rotY = transform.localRotation.eulerAngles.y;
+
+        dirNormalized = realCamera.localPosition.normalized;
+        finalDistance = realCamera.localPosition.magnitude;
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        rotX += Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime;
+        rotY += Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
+        rotX += Mathf.Clamp(rotX, -clampAngle, clampAngle);
+        Quaternion rot = Quaternion.Euler(rotX, rotY, 0);
+        transform.rotation = rot;
+
+     }
+    void LateUpdate() {
+        transform.position = Vector3.MoveTowards(transform.position, objectTofollow.position, followSpeed * Time.deltaTime);
+
+        finalDir = transform.TransformPoint(dirNormalized * maxDistance);
+
+        RaycastHit hit;
+
+        if(Physics.Linecast(transform.position,finalDir,out hit))
+        {
+            finalDistance = Mathf.Clamp(hit.distance, minDistance, maxDistance);
+        } else {
+            finalDistance = maxDistance;
+        }
+        realCamera.localPosition = Vector3.Lerp(realCamera.localPosition, dirNormalized * finalDistance, Time.deltaTime * smoothness);        
+    }
+}
+
+##캐릭터 조작
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class playermovement : MonoBehaviour
+{
+    Animator animator;
+    Camera camera;
+    CharacterController controller;
+
+    public float speed = 5f;
+    public float runSpeed = 8f;
+    public float smoothness = 10f;
+    public float finalSpeed;
+    public bool run;
+    public bool toggleCameraRotation;
+    void Start()
+    {
+        animator = this.GetComponent<Animator>();
+        camera = Camera.main;
+        controller = this.GetComponent<CharacterController>();
+
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.LeftAlt))
+        {
+            toggleCameraRotation = true;
+
+        }
+        else { toggleCameraRotation = false; }
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            run = true;
+        }
+        else { 
+
+            run = false;
+            }
+        
+    }
+    void LateUpdate()
+    {
+        if(toggleCameraRotation != true)
+        {
+            Vector3 playerRotate = Vector3.Scale(camera.transform.forward, new Vector3(1, 0, 1));
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(playerRotate), Time.deltaTime * smoothness);
+        }
+    void InputMovement()
+        {
+            finalSpeed = (run) ? runSpeed : speed;
+
+            Vector3 forward = transform.TransformDirection(Vector3.forward);
+            Vector3 right = transform.TransformDirection(Vector3.right);
+            Vector3 moveDirection = forward * Input.GetAxis("vertical") + right * Input.GetAxis("horizontal");
+            controller.Move(moveDirection.normalized * finalSpeed * Time.deltaTime);
+        }
+        
+    }
+}
