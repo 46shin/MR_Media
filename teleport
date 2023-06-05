@@ -1,0 +1,16 @@
+//특정 버튼을 누르면 특정 장소로 텔레포트할 수 있는 코드입니다.
+//특정 버튼 오브젝트의 onclick GameObject에 적용합니다.
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Teleports : MonoBehaviour
+{
+    public Transform player;
+    public Transform tele1;
+
+    public void TeleStart()
+    {
+        player.transform.position = tele1.transform.position;
+    }
+}
